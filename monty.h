@@ -1,9 +1,7 @@
-#ifndef MONTY
-#define MONTY
+#ifndef _MONTY_H
+#define _MONTY_H
 
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
 /**
  * struct stack_s - doubly linked list representation of a stack (or queue)
@@ -36,43 +34,45 @@ typedef struct instruction_s
 } instruction_t;
 
 /**
- * struct var_global - structure with the first addres of elements
- * @first: Pointer to stack
- * @buffer: The buffer
- * @file: The file descriptor of fopen.
+ * struct pack - transport getline and line_number
+ * @cmd: current line in operation
+ * @n: current line number
+ * @fdcode: to close globally the opened file
+ * @mode: 0 stack, 1 queue
+ *
+ * Description: whole line in manipulation and his
+ * position
  */
-typedef struct var_global
+struct pack
 {
-	stack_t **first;
-	char *buffer;
-	FILE *file;
-} global_t;
-extern global_t header;
+	char *cmd;
+	unsigned int n;
+	FILE *fdcode;
+	int mode;
+} pack;
 
-/* Main functions */
-void start_stack(stack_t **stack);
-void function_select(stack_t **stack, unsigned int line_number, char *command);
-void find_file(char *path, stack_t **stack);
-int manage_error(char *value, unsigned int line_number);
-
-/* Command functions */
+void freeStack(stack_t **stack);
+int isNumber(char *str);
 void push(stack_t **stack, unsigned int line_number);
-void pall(stack_t **stack, unsigned int line_number);
 void pint(stack_t **stack, unsigned int line_number);
+void pall(stack_t **stack, unsigned int line_number);
 void pop(stack_t **stack, unsigned int line_number);
-void sub(stack_t **stack, unsigned int line_number);
-void _div(stack_t **stack, unsigned int line_number);
-void _mul(stack_t **stack, unsigned int line_number);
-void _mod(stack_t **stack, unsigned int line_number);
-void pchar(stack_t **stack, unsigned int line_number);
-void nop(stack_t **stack, unsigned int line_number);
 void swap(stack_t **stack, unsigned int line_number);
 void add(stack_t **stack, unsigned int line_number);
-void _rotl(stack_t **stack, unsigned int line_number);
-void _rotr(stack_t **stack, unsigned int line_number);
+void sub(stack_t **stack, unsigned int line_number);
+void divs(stack_t **stack, unsigned int line_number);
+void mul(stack_t **stack, unsigned int line_number);
+void mod(stack_t **stack, unsigned int line_number);
 void pstr(stack_t **stack, unsigned int line_number);
-void free_all(void);
-void find(char *path, stack_t **stack);
-void select(stack_t **stack, unsigned int line_number);
+void rotl(stack_t **stack, unsigned int line_number);
+void rotr(stack_t **stack, unsigned int line_number);
+void stack(stack_t **stack, unsigned int line_number);
+void queue(stack_t **stack, unsigned int line_number);
+void nop(stack_t **stack, unsigned int line_number);
+void pchar(stack_t **stack, unsigned int line_number);
+void error(char *str, int shouldFree, int closeFile);
+char *str_concat(char *s1, char *s2);
+void built_in(stack_t **head);
+int numOfDigits(double number);
 
-#endif
+#endif /* _MONTY_H */
