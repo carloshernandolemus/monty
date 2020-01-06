@@ -1,56 +1,46 @@
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
 #include "monty.h"
 
-void find(char *path, stack_t **stack)
+/**
+ * built_in - checks if cmd is a command function
+ * and calls his respective function to habdle
+ * the stack_t
+ * @head: stack to operate with cmd
+ *
+ * Return: On fail 0
+ */
+void built_in(stack_t **head)
 {
-	FILE *file;
-	char *command;
-	size_t var1;
-	unsigned int line_number = 1;
-	char *buffer = NULL;
-
-	if (!path)
-	{
-		fprint(stderr, "Error: Can't open file %s\n", path);
-		exit(EXIT_FAILURE);
-	}
-
-	file = fopen(path, "r");
-	if (!file)
-	{
-		fprint(stderr, "Error: Can't open file %s\n", path);
-		exit(EXIT_FAILURE);
-	}
-	while (getline(&buffer, &var1, file) != -1)
-	{
-		command = strtok(buffer, " \n\t\r");
-		if (command)
-			function_select(&stack, line_number);
-		line_number++;
-	}
-	free(buffer);
-	fclose(file);
-	exit(EXIT_SUCCESS);
-}
-
-void select(stack_t **stack, unsigned int line_number)
-{
-	instruction_t functions[] = {
-		{"pint", pint},
-		{"pall", pall},
-		{"push", push},
-		{"pop", pop},
-		{"swap", swap},
-		{"add", add},
-		{"nop", nop}
-		{NULL, NULL}
+	instruction_t ops[] = {
+		{"push", push}, {"pall", pall},
+		{"pint", pint}, {"pop", pop},
+		{"swap", swap}, {"add", add},
+		{"nop", nop}, {"sub", sub},
+		{"div", divs}, {"mul", mul},
+		{"mod", mod}, {"pchar", pchar},
+		{"pstr", pstr}, {"rotl", rotl},
+		{"rotr", rotr}, {"queue", queue},
+		{"stack", stack}
 	};
 
-	for (var1 = 0; functions[var1].opcode != NULL; var1++)
-	{
-		if (strcmp(functions[var1].opcode, command) == 0)
+	int i = sizeof(ops) / sizeof(ops[0]);
+	char *buffer = strtok(pack.cmd, " \n\t");
+
+	if (buffer == NULL || *buffer == '#')
+		return;
+
+	while (i--)
+		if (!strcmp(buffer, ops[i].opcode))
 		{
-			functions[var1].f(&stack, line_number);
+			ops[i].f(head, pack.n);
 			return;
 		}
-	}
+
+	dprintf(2, "L%d: unknown instruction %s\n", pack.n, buffer);
+	free(pack.cmd);
+	freeStack(head);
+	fclose(pack.fdcode);
+	exit(EXIT_FAILURE);
 }
