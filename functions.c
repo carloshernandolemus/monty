@@ -1,94 +1,169 @@
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+#include <math.h>
 #include "monty.h"
+
+#define IGNORE (void)
+
 /**
- * pall - Print All stack
- * @stack: Addres of first element in stack
- * @line_number: Number of actual line
+ * push - The opcode push pushes an element at the top
+ * of the stack
+ * @stack: stack where this function will operate
+ * @line_number: on error case, to print out the info
+ *
+ *
+ * Return: nothing
+ * On error: it frees some buffers and exit the program
+ * with EXIT_FAILURE
+ */
+void push(stack_t **stack, unsigned int line_number)
+{
+	stack_t *add, *current = *stack;
+	char *value;
+
+	add = malloc(sizeof(stack_t));
+	if (!add)
+	{
+		freeStack(stack), free(pack.cmd);
+		error("Error: malloc failed", 0, 1);
+	}
+	value = strtok(NULL, " \n\t"); /* read next parameter from pack.cmd */
+
+	if (value && isNumber(value))
+		add->n = atoi(value);
+	else
+	{
+		dprintf(2, "L%d: usage: push integer\n", line_number);
+		free(add), free(pack.cmd), freeStack(stack);
+		fclose(pack.fdcode), exit(EXIT_FAILURE);
+	}
+
+	if (pack.mode == 0)
+	{
+		if (current)
+			current->prev = add;
+		*stack = add;
+		add->next = current;
+		add->prev = NULL;
+	}
+	else
+	{
+		while (current && current->next)
+			current = current->next;
+
+		if (current)
+			current->next = add;
+		else
+			*stack = add;
+		add->prev = current;
+		add->next = NULL;
+	}
+}
+
+/**
+ * pall - The opcode pall prints all the values on the stack,
+ * starting from the top of the stack.
+ * @stack: stack where this function will operate
+ * @line_number: on error case, to print out the info
+ *
+ *
+ * Return: nothing
+ * On error: it frees some buffers and exit the program
+ * with EXIT_FAILURE
  */
 void pall(stack_t **stack, unsigned int line_number)
 {
-	stack_t *tmp = NULL;
+	stack_t *current = *stack;
+	IGNORE line_number;
 
-	(void)line_number;
-	if (!stack || !(*stack))
-		return;
-	tmp = *stack;
-	while (tmp)
-	{
-		printf("%d\n", tmp->n);
-		tmp = tmp->next;
-	}
+	for (; current; current = current->next)
+		printf("%d\n", current->n);
 }
+
 /**
- * pint - Print only element of stack
- * @stack: Addres of first element in strack
- * @line_number: Number of actual line
+ * pint - The opcode pint prints the value at the top of the
+ * stack, followed by a new line.
+ * @stack: stack where this function will operate
+ * @line_number: on error case, to print out the info
+ *
+ *
+ * Return: nothing
+ * On error: it frees some buffers and exit the program
+ * with EXIT_FAILURE
  */
 void pint(stack_t **stack, unsigned int line_number)
 {
-
-	if ((!stack) || (!(*stack)))
+	if (*stack)
+		printf("%d\n", (*stack)->n);
+	else
 	{
-		fprintf(stderr, "L%u: can't pint, stack empty\n", line_number);
-		exit(EXIT_FAILURE);
+		freeStack(stack);
+		free(pack.cmd);
+		dprintf(2, "L%d: can't pint, stack empty", line_number);
+		error("", 0, 1);
 	}
-	printf("%d\n", (*stack)->n);
 }
+
 /**
- * pop - Delete a stack element
- * @stack: Addres of first element in stack
- * @line_number: Number of actual line
+ * pop - The opcode pop removes the top element of the stack.
+ * @stack: stack where this function will operate
+ * @line_number: on error case, to print out the info
+ *
+ *
+ * Return: nothing
+ * On error: it frees some buffers and exit the program
+ * with EXIT_FAILURE
  */
 void pop(stack_t **stack, unsigned int line_number)
 {
-	stack_t *tmp;
-
-	if (!(*stack) || (!stack))
+	if (*stack && (*stack)->next)
 	{
-		fprintf(stderr, "L%u: can't pop an empty stack\n", line_number);
-		exit(EXIT_FAILURE);
+		*stack = (*stack)->next;
+		free((*stack)->prev);
 	}
-	tmp = *stack;
-	*stack = (*stack)->next;
-	free(tmp);
+	else if (*stack)
+	{
+		free(*stack);
+		*stack = NULL;
+	}
+	else
+	{
+		free(pack.cmd);
+		dprintf(2, "L%d: can't pop an empty stack", line_number);
+		error("", 0, 1);
+	}
 }
+
+
 /**
- * swap - swap the first two elements in the list
- * @stack: Addres of first element in stack
- * @line_number: Number of actual line
- */
+ * swap - The opcode swap swaps the top two elements of the stack.
+ * @stack: stack where this function will operate
+ * @line_number: on error case, to print out the info
+ *
+ *
+ * Return: nothing
+ * On error: it frees some buffers and exit the program
+*/
 void swap(stack_t **stack, unsigned int line_number)
 {
-	int aux;
-	stack_t *tmp;
+	stack_t *current = *stack;
 
-	if (!stack || !(*stack) || !(*stack)->next)
+	if (*stack && (*stack)->next)
 	{
-		fprintf(stderr, "L%u: can't swap, stack too short\n", line_number);
-		exit(EXIT_FAILURE);
+		*stack = current->next;
+		current->next = (*stack)->next;
+		current->prev = *stack;
+		(*stack)->prev = NULL;
+		(*stack)->next = current;
+		if (current->next)
+			(current->next)->prev = current;
 	}
-	tmp = (*stack)->next;
-	aux = (*stack)->n;
-	(*stack)->n = tmp->n;
-	tmp->n = aux;
-}
-/**
- * add - Sum of the first two elements
- * @stack: Addres of first element in stack
- * @line_number: Number of actual line
- */
-void add(stack_t **stack, unsigned int line_number)
-{
-	int sum;
-	stack_t *tmp;
-
-	if (!stack || !(*stack) || !(*stack)->next)
+	else
 	{
-		fprintf(stderr, "L%u: can't add, stack too short\n", line_number);
-		exit(EXIT_FAILURE);
+		freeStack(stack);
+		free(pack.cmd);
+		dprintf(2, "L%d: can't swap, stack too short", line_number);
+		error("", 0, 1);
 	}
-	tmp = (*stack)->next;
-	sum = (*stack)->n + tmp->n;
-	free(*stack);
-	(*stack) = tmp;
-	(*stack)->n = sum;
 }
