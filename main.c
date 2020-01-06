@@ -1,47 +1,39 @@
+#include <stdio.h>
+#include <stdlib.h>
 #include "monty.h"
-global_t header;
-/**
- * start_stack - declare and initialize header
- * @stack: Addres of stack
- */
-void start_stack(stack_t **stack)
-{
-	*stack = NULL;
-	header.first = stack;
-}
-/**
- * free_all - Free all asign malloc func
- */
-void free_all(void)
-{
-	stack_t *tmp1, *tmp2 = NULL;
-
-	tmp1 = *(header.first);
-	while (tmp1 != NULL)
-	{
-		tmp2 = tmp1->next;
-		free(tmp1);
-		tmp1 = tmp2;
-	}
-	free(header.buffer);
-	fclose(header.file);
-}
 
 /**
- * main - num of arguments
- * @argc: number of arguments
- * @argv: arguments
- * Return: EXIT_FAILURE on Fail, EXIT_SUCCES on Succes
+ * main - get av[1], open it, get every command, execute it,
+ * free some buffers, close file and exit (monty interpreter)
+ * @ac: count of argument given
+ * @av: array of given arguments
+ *
+ *
+ * Return: EXIT_SUCCESS
+ * On error: EXIT_FAILURE
  */
-int main(int argc, char *argv[])
+int main(int ac, char *av[])
 {
-	stack_t *stack;
+	FILE *montyfd;
+	size_t buffSize = 0;
+	stack_t *head = NULL;
 
-	start_stack(&stack);
-	if (argc == 2)
-	{
-		find_file(argv[1], &stack);
-	}
-	fprintf(stderr, "USAGE: monty file\n");
-	exit(EXIT_FAILURE);
+	pack.cmd = NULL, pack.n = 1, pack.mode = 0;
+
+	if (ac != 2 || av == NULL)
+		error("USAGE: monty file", 0, 0);
+
+	montyfd = fopen(av[1], "r");
+	if (!montyfd)
+		error(str_concat("Error: Can't open file ", av[1]), 1, 0);
+	pack.fdcode = montyfd;
+
+	while (-1 != getline(&pack.cmd, &buffSize, montyfd))
+		built_in(&head), pack.n++;
+
+	freeStack(&head);
+	free(pack.cmd);
+	fclose(montyfd);
+
+	return (EXIT_SUCCESS);
 }
