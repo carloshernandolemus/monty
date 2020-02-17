@@ -1,13 +1,17 @@
-#ifndef MONTY
-#define MONTY
+#ifndef _MONTY_H_
+#define _MONTY_H_
 
+/*Libraries*/
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
 #include <ctype.h>
+#include <fcntl.h>
+#include <sys/types.h>
+
+
+/*Structures*/
 
 /**
  * struct stack_s - doubly linked list representation of a stack (or queue)
@@ -26,26 +30,23 @@ typedef struct stack_s
 } stack_t;
 
 /**
- * struct globals - global structure to use in the functions
- * @lifo: is stack or queue
- * @cont: current line
- * @arg: second parameter inside the current line
- * @head: doubly linked list
- * @fd: file descriptor
- * @buffer: input text
+ * struct aux_s - Global representation
+ * @val: integer
+ * @file: points to the previous element of the stack (or queue)
+ * @line_inf: points to the next element of the stack (or queue)
+ * @flag_sq: 0 or 1 isf is a queue
  *
- * Description: doubly linked list node structure
- * for stack, queues, LIFO, FIFO Holberton project
  */
-typedef struct globals
+typedef struct global_s
 {
-	int lifo;
-	unsigned int cont;
-	char  *arg;
-	stack_t *head;
-	FILE *fd;
-	char *buffer;
+	char *p_data;
+	FILE *f_hand;
+	char *monty_line;
+	int data_str;
 } global_t;
+
+/*Global definition*/
+extern global_t global;
 
 /**
  * struct instruction_s - opcode and its function
@@ -61,43 +62,43 @@ typedef struct instruction_s
 	void (*f)(stack_t **stack, unsigned int line_number);
 } instruction_t;
 
-extern global_t vglo;
 
-/* opcode_instructuions*/
-void _push(stack_t **stack, unsigned int line_number);
-void _pall(stack_t **stack, unsigned int line_number);
-void _pint(stack_t **doubly, unsigned int cline);
-void _pop(stack_t **doubly, unsigned int cline);
-void _swap(stack_t **doubly, unsigned int cline);
-void _queue(stack_t **doubly, unsigned int cline);
-void _stack(stack_t **doubly, unsigned int cline);
-void _add(stack_t **doubly, unsigned int cline);
-void _nop(stack_t **doubly, unsigned int cline);
-void _sub(stack_t **doubly, unsigned int cline);
-void _div(stack_t **doubly, unsigned int cline);
-void _mul(stack_t **doubly, unsigned int cline);
-void _mod(stack_t **doubly, unsigned int cline);
-void _pchar(stack_t **doubly, unsigned int cline);
-void _pstr(stack_t **doubly, unsigned int cline);
-void _rotl(stack_t **doubly, unsigned int cline);
-void _rotr(stack_t **doubly, unsigned int cline);
 
-/*get function*/
-void (*get_opcodes(char *opc))(stack_t **stack, unsigned int line_number);
+/*Functions*/
 
-/*imported functions*/
-int _sch(char *s, char c);
-char *_strtoky(char *s, char *d);
-void *_realloc(void *ptr, unsigned int old_size, unsigned int new_size);
-void *_calloc(unsigned int nmemb, unsigned int size);
-int _strcmp(char *s1, char *s2);
+/*main*/
+void freePlates(stack_t *stack);
+int opcSelec(char *line_inf, stack_t **stack, unsigned int lnum, FILE *file);
 
-/* doubly linked list functions */
-stack_t *add_dnodeint_end(stack_t **head, const int n);
-stack_t *add_dnodeint(stack_t **head, const int n);
-void free_dlistint(stack_t *head);
+/*maths*/
+void addm(stack_t **stack, unsigned int line_num);
+void subm(stack_t **stack, unsigned int line_num);
+void mulm(stack_t **stack, unsigned int line_num);
+void divm(stack_t **stack, unsigned int line_num);
+void modm(stack_t **stack, unsigned int line_num);
 
-/* main */
-void free_vglo(void);
+
+/*actions*/
+void push_data(stack_t **stack, unsigned int line_number);
+void add_top(stack_t **stack, int push_data);
+void add_last(stack_t **stack, int push_data);
+void delete_top(stack_t **stack, unsigned int line_number);
+void nop(stack_t **stack, unsigned int line_number);
+
+
+/*display*/
+void print_stack(stack_t **stack, unsigned int line_number);
+void print_top(stack_t **stack, unsigned int line_number);
+void printTopC(stack_t **stack, unsigned int line_number);
+void printTopS(stack_t **stack, unsigned int line_number);
+
+/*modifiers*/
+void swap2top(stack_t **stack, unsigned int line_number);
+void rotate_top(stack_t **stack, unsigned int line_number);
+void rotate_bottom(stack_t **stack, unsigned int line_number);
+
+/*data structures*/
+void queuef(stack_t **stack, unsigned int line_number);
+void stackf(stack_t **stack, unsigned int line_number);
 
 #endif

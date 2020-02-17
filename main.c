@@ -1,103 +1,120 @@
 #include "monty.h"
-
-global_t vglo;
-
-/**
- * free_vglo - frees the global variables
- *
- * Return: no return
- */
-void free_vglo(void)
-{
-	free_dlistint(vglo.head);
-	free(vglo.buffer);
-	fclose(vglo.fd);
-}
+global_t global;
 
 /**
- * start_vglo - initializes the global variables
- *
- * @fd: file descriptor
- * Return: no return
+ * main - Is the main function
+ * @argc:Is the index of argv
+ * @argv:Is the array of arguments passed by
+ * Return: 0 if is success
  */
-void start_vglo(FILE *fd)
-{
-	vglo.lifo = 1;
-	vglo.cont = 1;
-	vglo.arg = NULL;
-	vglo.head = NULL;
-	vglo.fd = fd;
-	vglo.buffer = NULL;
-}
 
-/**
- * check_input - checks if the file exists and if the file can
- * be opened
- *
- * @argc: argument count
- * @argv: argument vector
- * Return: file struct
- */
-FILE *check_input(int argc, char *argv[])
+int main(int argc, char **argv)
 {
-	FILE *fd;
+	FILE *file_handle;
+	char *line_inf;
+	size_t size = 0;
+	ssize_t line_content = 1;
+	stack_t *stack = NULL;
+	unsigned int lnum = 0;
 
-	if (argc == 1 || argc > 2)
+	if (argc != 2)
 	{
-		dprintf(2, "USAGE: monty file\n");
+		printf("USAGE: monty file\n");
 		exit(EXIT_FAILURE);
 	}
 
-	fd = fopen(argv[1], "r");
+	file_handle = fopen(argv[1], "r");
+	global.f_hand = file_handle;
 
-	if (fd == NULL)
+	if (file_handle == NULL)
 	{
-		dprintf(2, "Error: Can't open file %s\n", argv[1]);
-		exit(EXIT_FAILURE);
+		fprintf(stderr, "Error: Can't open file %s\n", argv[1]);
+		return (EXIT_FAILURE);
 	}
 
-	return (fd);
-}
-
-/**
- * main - Entry point
- *
- * @argc: argument count
- * @argv: argument vector
- * Return: 0 on success
- */
-int main(int argc, char *argv[])
-{
-	void (*f)(stack_t **stack, unsigned int line_number);
-	FILE *fd;
-	size_t size = 256;
-	ssize_t nlines = 0;
-	char *lines[2] = {NULL, NULL};
-
-	fd = check_input(argc, argv);
-	start_vglo(fd);
-	nlines = getline(&vglo.buffer, &size, fd);
-	while (nlines != -1)
+	while (line_content > 0)
 	{
-		lines[0] = _strtoky(vglo.buffer, " \t\n");
-		if (lines[0] && lines[0][0] != '#')
+		line_inf = NULL;
+		line_content = getline(&line_inf, &size, file_handle);
+		global.monty_line = line_inf;
+		lnum++;
+
+		if (line_content > 0)
 		{
-			f = get_opcodes(lines[0]);
-			if (!f)
-			{
-				dprintf(2, "L%u: ", vglo.cont);
-				dprintf(2, "unknown instruction %s\n", lines[0]);
-				free_vglo();
-				exit(EXIT_FAILURE);
-			}
-			vglo.arg = _strtoky(NULL, " \t\n");
-			f(&vglo.head, vglo.cont);
+			opcSelec(line_inf, &stack, lnum, file_handle);
 		}
-		nlines = getline(&vglo.buffer, &size, fd);
-		vglo.cont++;
+		free(line_inf);
 	}
-
-	free_vglo();
+	freePlates(stack);
+	fclose(file_handle);
 
 	return (0);
+}
+
+
+/**
+ * freePlates - Release the mem use of the stack elem
+ * @stack: Pointer to stack mem address
+ */
+void freePlates(stack_t *stack)
+{
+	stack_t *plate = stack;
+
+	while (stack)
+	{
+		plate = stack->next;
+		free(stack);
+		stack = plate;
+	}
+}
+
+
+/**
+ * opcSelec - Selector of functions
+ * @line_inf: Is the words in the line
+ * @stck: Pointer to the stack mem add
+ * @lnum: current liner number
+ * @f_handle: Is the monty file
+ * Return: 0 if is compared opcode is found 1 is not
+ */
+int opcSelec(char *line_inf, stack_t **stck, unsigned int lnum, FILE *f_handle)
+{
+	unsigned int ind = 0;
+	char *codeOp;
+
+	instruction_t listOpc[] = {
+		{"push", push_data}, {"pall", print_stack}, {"pint", print_top},
+		{"pop", delete_top}, {"swap", swap2top}, {"nop", nop},
+		{"add", addm}, {"sub", subm}, {"div", divm}, {"mul", mulm},
+		{"mod", modm}, {"pchar", printTopC}, {"pstr", printTopS},
+		{"rotl", rotate_top}, {"rotr", rotate_bottom},
+		{"queue", queuef}, {"stack", stackf}, {NULL, NULL}
+	};
+
+	codeOp = strtok(line_inf, " \n\t");
+
+	if (codeOp && codeOp[0] == '#')
+		return (0);
+
+	global.p_data = strtok(NULL, " \n\t");
+
+	while (listOpc[ind].opcode && codeOp)
+	{
+		if (strcmp(codeOp, listOpc[ind].opcode) == 0)
+		{
+			listOpc[ind].f(stck, lnum);
+			return (0);
+		}
+		ind++;
+	}
+	if (codeOp && listOpc[ind].opcode == NULL)
+	{
+		fprintf(stderr, "L%d: unknown instruction %s\n", lnum, codeOp);
+		fclose(f_handle);
+		free(line_inf);
+		freePlates(*stck);
+		exit(EXIT_FAILURE);
+	}
+	return (1);
+
 }
